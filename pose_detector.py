@@ -7,9 +7,12 @@ import numpy as np
 from typing import Dict, Optional, List, Tuple
 
 try:
-    import mediapipe as mp
-except ImportError:
-    raise ImportError("MediaPipe not installed. Run: pip install mediapipe")
+    from mediapipe import solutions
+    from mediapipe.framework.formats import landmark_pb2
+    Pose = solutions.pose.Pose
+    PoseLandmark = solutions.pose.PoseLandmark
+except ImportError as e:
+    raise ImportError(f"MediaPipe not properly installed. Run: pip install --upgrade mediapipe\nError: {e}")
 
 
 class PoseDetector:
@@ -40,10 +43,7 @@ class PoseDetector:
             min_tracking_confidence: Minimum confidence for tracking
         """
         try:
-            self.mp_pose = mp.solutions.pose
-            self.mp_drawing = mp.solutions.drawing_utils
-            
-            self.pose = self.mp_pose.Pose(
+            self.pose = Pose(
                 static_image_mode=static_image_mode,
                 model_complexity=model_complexity,
                 smooth_landmarks=smooth_landmarks,
