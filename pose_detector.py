@@ -2,9 +2,14 @@
 Pose detection using MediaPipe.
 """
 
-import mediapipe as mp
+import cv2
 import numpy as np
 from typing import Dict, Optional, List, Tuple
+
+try:
+    import mediapipe as mp
+except ImportError:
+    raise ImportError("MediaPipe not installed. Run: pip install mediapipe")
 
 
 class PoseDetector:
@@ -34,14 +39,19 @@ class PoseDetector:
             min_detection_confidence: Minimum confidence for detection
             min_tracking_confidence: Minimum confidence for tracking
         """
-        self.mp_pose = mp.solutions.pose
-        self.pose = self.mp_pose.Pose(
-            static_image_mode=static_image_mode,
-            model_complexity=model_complexity,
-            smooth_landmarks=smooth_landmarks,
-            min_detection_confidence=min_detection_confidence,
-            min_tracking_confidence=min_tracking_confidence
-        )
+        try:
+            self.mp_pose = mp.solutions.pose
+            self.mp_drawing = mp.solutions.drawing_utils
+            
+            self.pose = self.mp_pose.Pose(
+                static_image_mode=static_image_mode,
+                model_complexity=model_complexity,
+                smooth_landmarks=smooth_landmarks,
+                min_detection_confidence=min_detection_confidence,
+                min_tracking_confidence=min_tracking_confidence
+            )
+        except Exception as e:
+            raise RuntimeError(f"Failed to initialize MediaPipe Pose: {e}")
     
     def detect(self, image: np.ndarray) -> Optional[Dict]:
         """
@@ -54,7 +64,7 @@ class PoseDetector:
             Dictionary with landmarks or None if no pose detected
         """
         # Convert BGR to RGB
-        image_rgb = np.flip(image, axis=2)
+        image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
         
         # Run pose detection
         results = self.pose.process(image_rgb)
@@ -144,4 +154,5 @@ class PoseDetector:
     
     def close(self):
         """Clean up resources."""
-        self.pose.close()
+        if hasattr(self, 'pose'):
+            self.pose.close()
