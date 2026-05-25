@@ -12,6 +12,12 @@ class VideoVisualizer:
     """Handle video annotation and visualization."""
     
     @staticmethod
+    def create_resizable_window(window_name: str = 'Bike Knee Analyzer'):
+        """Create a resizable window for video preview."""
+        cv2.namedWindow(window_name, cv2.WINDOW_NORMAL)
+        cv2.resizeWindow(window_name, 960, 720)  # Default size
+    
+    @staticmethod
     def draw_angle_on_frame(frame: np.ndarray, 
                            hip: tuple, 
                            knee: tuple, 
