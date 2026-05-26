@@ -127,7 +127,7 @@ def main():
     parser.add_argument('--csv', type=str,
                         help='Path to save CSV report with results')
     parser.add_argument('--plots', type=str,
-                        help='Directory to save analysis plots (side-view only)')
+                        help='Directory to save analysis plots (side-view knee angles only)')
 
     # ── Display & pose ─────────────────────────────────────────────────
     parser.add_argument('--side', choices=['left', 'right'], default='right',
@@ -190,7 +190,7 @@ def main():
     else:
         marker_detector = build_marker_detector(args)
 
-    # ── Run ────────────────────────────────────────────────────────────
+    # ── Run ───────────────────────────────────────────────────────────
     analyzer = BikeKneeAnalyzer(
         model_complexity=args.complexity,
         min_detection_confidence=0.5
@@ -249,34 +249,45 @@ def main():
             print(f"Max left:            {stats['max_left_deviation']:+.1f} px")
             print(f"Max right:           {stats['max_right_deviation']:+.1f} px")
         else:
-            print("SIDE-VIEW ANALYSIS RESULTS")
+            print("SIDE-VIEW ANALYSIS RESULTS - KNEE ANGLES")
             print("=" * 50)
             stats = results['statistics']
             print(f"Frames analyzed:     {stats['count']}")
-            print(f"Minimum angle:       {stats['min']:.2f}°")
-            print(f"Maximum angle:       {stats['max']:.2f}°")
-            print(f"Average angle:       {stats['avg']:.2f}°")
-            print(f"Std deviation:       {stats['std']:.2f}°")
+            if stats['count'] > 0:
+                print(f"Minimum angle:       {stats['min']:.2f}°")
+                print(f"Maximum angle:       {stats['max']:.2f}°")
+                print(f"Average angle:       {stats['avg']:.2f}°")
+                print(f"Std deviation:       {stats['std']:.2f}°")
 
-            sources = results.get('detection_sources', [])
-            if sources:
-                n_marker = sources.count('marker')
-                n_pose   = sources.count('pose')
-                if n_marker or n_pose:
-                    print(f"Detected by:         markers={n_marker}, pose={n_pose}")
+                sources = results.get('detection_sources', [])
+                if sources:
+                    n_marker = sources.count('marker')
+                    n_pose   = sources.count('pose')
+                    n_manual = sources.count('manual')
+                    if n_marker or n_pose or n_manual:
+                        print(f"Detected by:         markers={n_marker}, pose={n_pose}, manual={n_manual}")
+                
+                # Show all individual angles
+                print(f"\nDetailed angles ({len(results['angles'])} frames):")
+                angles_array = results['angles']
+                frames_array = results['frame_numbers']
+                sources_array = sources
+                for i, (frame_num, angle, source) in enumerate(zip(frames_array, angles_array, sources_array)):
+                    print(f"  Frame {frame_num}: {angle:.2f}° [{source}]")
+            else:
+                print("No knee angles were successfully detected.")
 
         if args.csv:
             if args.rear_view:
-                # Need access to rear_analyzer for rear-view export
-                # For now, just indicate where it would be saved
-                print(f"CSV report would be saved to: {args.csv}")
+                print(f"CSV export not yet available for rear-view mode")
             else:
                 analyzer.export_to_csv(args.csv)
                 print(f"CSV report saved to: {args.csv}")
 
-        if args.plots and not args.rear_view:
-            analyzer.generate_plots(args.plots)
-            print(f"Plots saved to: {args.plots}")
+        if args.plots and not args.rear_view and not args.multi_angle:
+            if results.get('statistics', {}).get('count', 0) > 0:
+                analyzer.generate_plots(args.plots)
+                print(f"Plots saved to: {args.plots}")
 
         if args.output:
             print(f"Annotated video saved to: {args.output}")
@@ -285,6 +296,8 @@ def main():
 
     except Exception as e:
         print(f"Error during analysis: {e}", file=sys.stderr)
+        import traceback
+        traceback.print_exc()
         sys.exit(1)
 
 
