@@ -201,8 +201,8 @@ class BikeKneeAnalyzer:
                         sr_x = sr['x'] if isinstance(sr, dict) else sr.x
                         sr_y = sr['y'] if isinstance(sr, dict) else sr.y
                         
-                        left_detected = (int(sl_x * w), int(sl_y * h))
-                        right_detected = (int(sr_x * w), int(sr_y * h))
+                        left_detected = (int(sl_x * width), int(sl_y * height))
+                        right_detected = (int(sr_x * width), int(sr_y * height))
                 
                 # Analyze sway
                 if left_detected and right_detected:
@@ -214,7 +214,7 @@ class BikeKneeAnalyzer:
                 # ── Multi-angle analysis: shoulder, elbow, hip, knee, ankle ──
                 landmarks = self.pose_detector.detect(frame)
                 if landmarks:
-                    data = multi_angle_analyzer.analyze_frame(landmarks, h, w)
+                    data = multi_angle_analyzer.analyze_frame(landmarks, height, width)
                     if data:
                         annotated_frame = multi_angle_analyzer.draw_overlay(frame, data)
             else:
